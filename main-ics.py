@@ -1,10 +1,11 @@
 
 # This script is a simple example of how to use the FullCalendar component with an ics file.
-from fullcalendar import FullCalendar
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi import Response
-from nicegui import app, ui
 import requests
+from fastapi import Response
+from fastapi.middleware.cors import CORSMiddleware
+from fullcalendar import FullCalendar
+
+from nicegui import app, ui
 
 # Add CORS middleware configuration
 app.add_middleware(

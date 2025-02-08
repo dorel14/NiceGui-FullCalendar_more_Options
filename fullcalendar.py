@@ -1,5 +1,6 @@
+from collections.abc import Dict, List
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Optional
 
 from nicegui.element import Element
 from nicegui.events import handle_event
