@@ -23,11 +23,9 @@
 
 ## Code Example
 
-```python
 An example code for event creation is present in the `main.py` file.
 
 For handling .ics calendars, the code is present in the `main-ics.py` file.
-```
 
 ## Screenshots
 

@@ -24,7 +24,6 @@
 
 ## Exemple de Code
 
-```python
 Un exemple de code pour la création des événements est présent dans le fichier main.py.
 
 Pour la gestion des calendriers .ics ,  le code est présent dans le fichier main-ics.py.
