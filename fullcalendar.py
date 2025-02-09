@@ -1,4 +1,4 @@
-from collections.abc import Dict, List
+
 from pathlib import Path
 from typing import Any, Callable, Optional
 
@@ -8,7 +8,7 @@ from nicegui.events import handle_event
 
 class FullCalendar(Element, component='fullcalendar.js'):
 
-    def __init__(self, options: Dict[str, Any],
+    def __init__(self, options: dict[str, Any],
                 on_click: Optional[Callable] = None,
                 on_Dateclick:Optional[Callable] = None) -> None:
         """FullCalendar
@@ -53,6 +53,6 @@ class FullCalendar(Element, component='fullcalendar.js'):
         self.run_method('update_calendar')
 
     @property
-    def events(self) -> List[Dict[str, Any]]:
+    def events(self) -> list[dict[str, Any]]:
         """List of events to display on the calendar."""
         return self._props['options'].get('events', [])

@@ -1,5 +1,7 @@
 
 # This script is a simple example of how to use the FullCalendar component with an ics file.
+from typing import Optional
+
 import requests
 from fastapi import Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -17,8 +19,12 @@ app.add_middleware(
 )
 # Add proxy endpoint to fetch ICS data
 @app.get("/proxy-ics")
-def proxy_ics():
-    ics_url = 'https://fr.ftp.opendatasoft.com/openscol/fr-en-calendrier-scolaire/Zone-A-B-C-Corse.ics'
+def proxy_ics(ics_url: Optional[str] = None):
+    if not ics_url:
+        return Response(
+            content="Erreur: aucune URL ICS fournie.",
+            status_code=400
+        )
     response = requests.get(ics_url)
     if response.status_code == 200:
         return Response(
@@ -42,10 +48,18 @@ options = {
     'height': 'auto',
     'selectable': True,
     'weekNumbers': True,
-    'events': {
-        'url': '/proxy-ics',  # Use local proxy endpoint to fetch ICS data
-        'format': 'ics'
-    },
+    'eventSources':[
+        {
+            'url': '/proxy-ics?ics_url=https://fr.ftp.opendatasoft.com/openscol/fr-en-calendrier-scolaire/Zone-A.ics',
+            'format': 'ics',
+            'color': 'blue'
+        },
+        {
+            'url': '/proxy-ics?ics_url=https://fr.ftp.opendatasoft.com/openscol/fr-en-calendrier-scolaire/Zone-B.ics',
+            'format': 'ics',
+            'color': 'green'
+        }
+    ],
 }
 
 calendar = FullCalendar(options)
