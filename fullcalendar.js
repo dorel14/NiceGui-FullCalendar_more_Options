@@ -9,10 +9,12 @@ export default {
   async mounted() {
     await this.$nextTick(); // NOTE: wait for window.path_prefix to be set
     await loadResource('https://cdn.jsdelivr.net/npm/ical.js/build/ical.min.js');
+    await loadResource('https://cdn.jsdelivr.net/npm/rrule@2.6.4/dist/es5/rrule.min.js');
     await loadResource(window.path_prefix + `${this.resource_path}/index.global.min.js`);
     await loadResource(window.path_prefix + `${this.resource_path}/locales-all.global.min.js`);
     await loadResource(window.path_prefix + `${this.resource_path}/multimonth/index.global.min.js`); 
     await loadResource(window.path_prefix + `${this.resource_path}/icalendar.index.global.js`);
+    await loadResource(window.path_prefix + `${this.resource_path}/rrule.index.global.min.js`);
     await loadResource(window.path_prefix + `${this.resource_path}/daygrid/index.global.min.js`);
     await loadResource(window.path_prefix + `${this.resource_path}/timegrid/index.global.min.js`);
     await loadResource(window.path_prefix + `${this.resource_path}/list/index.global.min.js`);

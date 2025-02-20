@@ -1,4 +1,5 @@
 # NiceGui FullCalendar Example
+
 [![en](https://img.shields.io/badge/lang-en-red.svg)](https://github.com/dorel14/NiceGui-FullCalendar_more_Options/blob/master/README.md)
 [![fr](https://img.shields.io/badge/lang-fr-green.svg)](https://github.com/dorel14/NiceGui-FullCalendar_more_Options/blob/master/README.fr.md)
 
@@ -37,5 +38,3 @@ Pour la gestion des calendriers .ics ,  le code est présent dans le fichier mai
 ## Contributions
 
 Les contributions sont les bienvenues ! Veuillez soumettre une pull request ou ouvrir une issue pour discuter des changements que vous souhaitez apporter.
-
-
