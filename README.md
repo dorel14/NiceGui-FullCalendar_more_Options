@@ -12,6 +12,7 @@
 - **@fullcalendar/list**: Provides List views: `listYear`, `listMonth`, `listWeek`, `listDay`, `list` (generic)
 - **@fullcalendar/multimonth**: Provides Multi-Month views: `multiMonthYear`, `multiMonth` (generic)
 - **@fullcalendar/icalendar**: For loading events from an iCalendar feed
+- **@fullcalendat/rrule**: For handling recurring events via rrule
 
 ## Features
 
@@ -26,7 +27,6 @@
 
 An example code for event creation is present in the `main.py` file.
 
-For handling .ics calendars, the code is present in the `main-ics.py` file.
 
 ## Screenshots
 
