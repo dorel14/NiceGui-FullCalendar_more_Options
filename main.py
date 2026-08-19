@@ -14,6 +14,8 @@ maxtime = '23:59:00'
 today = date.today().strftime("%Y-%m-%d")
 nowhour = datetime.now().strftime("%H:%M")
 
+
+#To get events from DB or other format
 def get_events():
     events = [
         {
@@ -41,6 +43,32 @@ def get_events():
             'color': 'orange',
         },
     ]
+    return events
+
+#Get event on View selection (Example you select a Month view)
+def fetch_events_from_python(info):
+    """
+    Équivalent JS de :
+        events: function(fetchInfo, successCallback) {
+            // build events...
+            successCallback(events);
+        }
+    """
+    # info.args contient startStr, endStr, timeZone
+    ui.notify(f"Chargement événements : {info.args['startStr']} → {info.args['endStr']}")
+
+    events = []
+    # Exemple : générer dynamiquement selon la période demandée
+    start = info.args['startStr'][:10]  # "2025-02-15"
+    end   = info.args['endStr'][:10]
+
+    for hour in range(8, 18, 2):
+        events.append({
+            'title': f'Séance automatique ({start[:10]})',
+            'start': f"{start} {hour:02d}:00:00",
+            'end':   f"{start} {hour+1:02d}:00:00",
+            'color': 'purple',
+        })
     return events
 
 # Add CORS middleware configuration
@@ -121,7 +149,7 @@ def create_calendar():
         'selectable': True, #need to be activated in order to make dateClick available
         'weekNumbers': True, #to show weeknumbers in calendars
         'eventSources':[
-            get_events(), #can be replaced with a list of events
+            get_events(), #can be replaced with a list of events  
             {
             'url': '/proxy-ics?ics_url=https://fr.ftp.opendatasoft.com/openscol/fr-en-calendrier-scolaire/Zone-A.ics',
             'format': 'ics',
@@ -139,7 +167,8 @@ def create_calendar():
         }],
         ]
         }
-    fullcalendar(options, on_click=handle_click)
+    fullcalendar(options, on_click=handle_click,
+                on_fetch_events=fetch_events_from_python) #New Options to fetch events on view selection
 
 
 with ui.row():
