@@ -9,6 +9,15 @@ from fullcalendar import FullCalendar as fullcalendar
 
 from nicegui import app, events, ui
 
+# Add CORS middleware configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 mintime = '00:00:00'
 maxtime = '23:59:00'
 today = date.today().strftime("%Y-%m-%d")
@@ -71,14 +80,7 @@ def fetch_events_from_python(info):
         })
     return events
 
-# Add CORS middleware configuration
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+
 # Add proxy endpoint to fetch ICS data
 @app.get("/proxy-ics")
 def proxy_ics(ics_url: Optional[str] = None):
