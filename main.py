@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-from datetime import date, datetime
-from typing import Optional
+from datetime import date, datetime, timedelta
+from typing import Any
 
 import requests
 from fastapi import Response
@@ -9,14 +9,18 @@ from fullcalendar import FullCalendar as fullcalendar
 
 from nicegui import app, events, ui
 
-# Add CORS middleware configuration
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Add CORS middleware configuration.
+# NiceGUI's script mode re-executes this file via runpy; guard against the
+# second run when the app is already started (otherwise add_middleware raises
+# "Cannot add middleware after an application has started").
+if not app.is_started:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 mintime = '00:00:00'
 maxtime = '23:59:00'
@@ -67,23 +71,28 @@ def fetch_events_from_python(info):
     ui.notify(f"Chargement événements : {info.args['startStr']} → {info.args['endStr']}")
 
     events = []
-    # Exemple : générer dynamiquement selon la période demandée
-    start = info.args['startStr'][:10]  # "2025-02-15"
-    end   = info.args['endStr'][:10]
+    # Ne charger QUE les événements de la période demandée [start, end).
+    # FullCalendar fournit startStr/endStr dans la timeZone du calendrier.
+    start = datetime.fromisoformat(info.args['startStr'][:19])
+    end = datetime.fromisoformat(info.args['endStr'][:19])
 
-    for hour in range(8, 18, 2):
-        events.append({
-            'title': f'Séance automatique ({start[:10]})',
-            'start': f"{start} {hour:02d}:00:00",
-            'end':   f"{start} {hour+1:02d}:00:00",
-            'color': 'purple',
-        })
+    day = start
+    while day < end:
+        day_str = day.strftime('%Y-%m-%d')
+        for hour in range(8, 18, 2):
+            events.append({
+                'title': f'Séance automatique ({day_str})',
+                'start': f'{day_str} {hour:02d}:00:00',
+                'end':   f'{day_str} {hour + 1:02d}:00:00',
+                'color': 'purple',
+            })
+        day += timedelta(days=1)
     return events
 
 
 # Add proxy endpoint to fetch ICS data
 @app.get("/proxy-ics")
-def proxy_ics(ics_url: Optional[str] = None):
+def proxy_ics(ics_url: str | None = None):
     if not ics_url:
         return Response(
             content="Erreur: aucune URL ICS fournie.",
@@ -102,25 +111,26 @@ def add_event_to_db(data):
         ui.notify(f'title={data["event_title"]}, \
         rrule={data["rrule"]}, \
         color="white"')
+        start = datetime.combine(
+            datetime.strptime(data['event_start_date'], "%Y-%m-%d"),
+            datetime.strptime(data['event_start_time'], "%H:%M").time()
+        ).isoformat()
         ui.notify(
+            message=f"Événement récurrent ajouté : {data['event_title']} à {start}",
             title=data['event_title'],
-            start=datetime.combine(
-                datetime.strptime(data['event_start_date'], "%Y-%m-%d"),
-                datetime.strptime(data['event_start_time'], "%H:%M").time()
-            ).isoformat(),
-            rrule=data['rrule']
         )
     else:
         ui.notify(f'title={data["event_title"]}, \
         start={datetime.combine(datetime.strptime(data["event_start_date"], "%Y-%m-%d"),\
                 datetime.strptime(data["event_start_time"], "%H:%M").time())}, \
         color="white"')
+        start = datetime.combine(
+            datetime.strptime(data['event_start_date'], "%Y-%m-%d"),
+            datetime.strptime(data['event_start_time'], "%H:%M").time()
+        ).isoformat()
         ui.notify(
+            message=f"Événement ajouté : {data['event_title']} à {start}",
             title=data['event_title'],
-            start=datetime.combine(
-                datetime.strptime(data['event_start_date'], "%Y-%m-%d"),
-                datetime.strptime(data['event_start_time'], "%H:%M").time()
-            ).isoformat()
         )
 
 
@@ -139,7 +149,7 @@ def create_calendar():
         'initialView': 'dayGridMonth',
         'headerToolbar': {'left': 'today',
                             'center':'title',
-                            'right': 'multiMonthYear, dayGridMonth, timeGridWeek, timeGridDay, listWeek'
+                            'right': 'multiMonthYear, dayGridMonth, timeGridWeek, daySelected, listWeek'
                         },
         'footerToolbar': {'right': 'prev,next'},
         'slotMinTime': mintime,
@@ -151,7 +161,7 @@ def create_calendar():
         'selectable': True, #need to be activated in order to make dateClick available
         'weekNumbers': True, #to show weeknumbers in calendars
         'eventSources':[
-            get_events(), #can be replaced with a list of events  
+            get_events(), #can be replaced with a list of events
             {
             'url': '/proxy-ics?ics_url=https://fr.ftp.opendatasoft.com/openscol/fr-en-calendrier-scolaire/Zone-A.ics',
             'format': 'ics',
@@ -177,7 +187,7 @@ with ui.row():
     ui.page_title("Events")
     create_calendar()
     with ui.dialog() as add_event, ui.card():
-        data = {'rrule': {}}  # Initialize data with rrule dict
+        data: dict[str, Any] = {'rrule': {}}  # Initialize data with rrule dict
 
         from typing import Any
 

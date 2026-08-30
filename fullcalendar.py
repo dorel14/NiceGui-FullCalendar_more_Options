@@ -1,18 +1,21 @@
+from __future__ import annotations
 
-from pathlib import Path
-from typing import Any, Optional
-from collections.abc import Awaitable, Callable
-
-from nicegui.element import Element
-from nicegui.events import handle_event, GenericEventArguments
-from nicegui import core, background_tasks
 import inspect
-class FullCalendar(Element, component='fullcalendar.js'):
+from collections.abc import Awaitable, Callable
+from pathlib import Path
+from typing import Any
+
+from nicegui import background_tasks
+from nicegui.element import Element
+from nicegui.events import GenericEventArguments, handle_event
+
+
+class FullCalendar(Element, component='fullcalendar_comp.js'):
 
     def __init__(self, options: dict[str, Any],
-                on_click: Optional[Callable] = None,
-                on_dateclick:Optional[Callable] = None,
-                on_fetch_events: Optional[Callable] = None) -> None:
+                 on_click: Callable | None = None,
+                 on_dateclick: Callable | None = None,
+                 on_fetch_events: Callable | None = None) -> None:
 
         """FullCalendar
 
@@ -27,7 +30,7 @@ class FullCalendar(Element, component='fullcalendar.js'):
         self._on_fetch_events = on_fetch_events
 
         if on_click:
-            self.on('click', lambda e: handle_event(on_click, e))
+            self.on('click', lambda e: handle_event(on_click, e), args=['info'])
         if on_fetch_events:
             self.on('fetch_events', self._handle_fetch_events)
 
@@ -59,17 +62,22 @@ class FullCalendar(Element, component='fullcalendar.js'):
         self.run_method('update_calendar')
 
     def _handle_fetch_events(self, e: GenericEventArguments) -> None:
-        """Bridge JS → Python : FullCalendar a besoin d'événements."""
+        """Bridge JS -> Python : FullCalendar needs events."""
         # e.args = {'startStr': ..., 'endStr': ..., 'timeZone': ...}
         handler = self._on_fetch_events
+        assert handler is not None
+        arguments = GenericEventArguments(sender=self, client=self.client, args=e.args)
 
-        result = handler(e) if inspect.signature(handler).parameters else handler()
+        if inspect.signature(handler).parameters:
+            result = handler(arguments)
+        else:
+            result = handler()
 
         if isinstance(result, Awaitable):
-            # Callback asynchrone → planifié comme tâche en arrière-plan
+            # Asynchronous callback -> scheduled as a background task
             background_tasks.create(self._process_fetch_result(result))
         else:
-            # Callback synchrone → envoyer immédiatement
+            # Synchronous callback -> send immediately
             self._send_events(result)
 
     async def _process_fetch_result(self, result: Awaitable) -> None:
@@ -77,7 +85,7 @@ class FullCalendar(Element, component='fullcalendar.js'):
         self._send_events(events)
 
     def _send_events(self, events: list[dict]) -> None:
-        """Bridge Python → JS : envoyer les événements à FullCalendar."""
+        """Bridge Python -> JS : send events to FullCalendar."""
         self.run_method('provide_events', events)
 
     @property
