@@ -10,13 +10,14 @@ from nicegui.element import Element
 from nicegui.events import GenericEventArguments, handle_event
 
 
-class FullCalendar(Element, component='fullcalendar_comp.js'):
-
-    def __init__(self, options: dict[str, Any],
-                 on_click: Callable | None = None,
-                 on_dateclick: Callable | None = None,
-                 on_fetch_events: Callable | None = None) -> None:
-
+class FullCalendar(Element, component="fullcalendar_comp.js"):
+    def __init__(
+        self,
+        options: dict[str, Any],
+        on_click: Callable | None = None,
+        on_dateclick: Callable | None = None,
+        on_fetch_events: Callable | None = None,
+    ) -> None:
         """FullCalendar
 
         An element that integrates the FullCalendar library (https://fullcalendar.io/) to create an interactive calendar display.
@@ -25,14 +26,14 @@ class FullCalendar(Element, component='fullcalendar_comp.js'):
         :param on_click: callback that is called when a calendar event is clicked.
         """
         super().__init__()
-        self.add_resource(Path(__file__).parent / 'lib')
-        self._props['options'] = options
+        self.add_resource(Path(__file__).parent / "lib")
+        self._props["options"] = options
         self._on_fetch_events = on_fetch_events
 
         if on_click:
-            self.on('click', lambda e: handle_event(on_click, e), args=['info'])
+            self.on("click", lambda e: handle_event(on_click, e), args=["info"])
         if on_fetch_events:
-            self.on('fetch_events', self._handle_fetch_events)
+            self.on("fetch_events", self._handle_fetch_events)
 
     def add_event(self, title: str, start: str, end: str, **kwargs) -> None:
         """Add an event to the calendar.
@@ -41,10 +42,10 @@ class FullCalendar(Element, component='fullcalendar_comp.js'):
         :param start: start time of the event
         :param end: end time of the event
         """
-        event_dict = {'title': title, 'start': start, 'end': end, **kwargs}
-        self._props['options']['events'].append(event_dict)
+        event_dict = {"title": title, "start": start, "end": end, **kwargs}
+        self._props["options"]["events"].append(event_dict)
         self.update()
-        self.run_method('update_calendar')
+        self.run_method("update_calendar")
 
     def remove_event(self, title: str, start: str, end: str) -> None:
         """Remove an event from the calendar.
@@ -53,13 +54,13 @@ class FullCalendar(Element, component='fullcalendar_comp.js'):
         :param start: start time of the event
         :param end: end time of the event
         """
-        for event in self._props['options']['events']:
-            if event['title'] == title and event['start'] == start and event['end'] == end:
-                self._props['options']['events'].remove(event)
+        for event in self._props["options"]["events"]:
+            if event["title"] == title and event["start"] == start and event["end"] == end:
+                self._props["options"]["events"].remove(event)
                 break
 
         self.update()
-        self.run_method('update_calendar')
+        self.run_method("update_calendar")
 
     def _handle_fetch_events(self, e: GenericEventArguments) -> None:
         """Bridge JS -> Python : FullCalendar needs events."""
@@ -86,9 +87,9 @@ class FullCalendar(Element, component='fullcalendar_comp.js'):
 
     def _send_events(self, events: list[dict]) -> None:
         """Bridge Python -> JS : send events to FullCalendar."""
-        self.run_method('provide_events', events)
+        self.run_method("provide_events", events)
 
     @property
     def events(self) -> list[dict[str, Any]]:
         """List of events to display on the calendar."""
-        return self._props['options'].get('events', [])
+        return self._props["options"].get("events", [])
