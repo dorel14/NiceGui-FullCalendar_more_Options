@@ -27,6 +27,55 @@
 
 Un exemple de code pour la création des événements est présent dans le fichier `main.py`.
 
+## Récupération dynamique des événements
+
+Au lieu de charger tous les événements à l'initialisation, le calendrier peut demander les événements à la demande (ex: par mois/semaine) via une callback Python. Pratique pour les gros volumes de données.
+
+Voir l'exemple fonctionnel dans [`basic_main.py`](basic_main.py).
+
+> Le mécanisme de fetch est implémenté dans [`fullcalendar.py`](fullcalendar.py) et [`fullcalendar.js`](fullcalendar.js) — assurez-vous que ces fichiers se trouvent dans le même dossier que votre script.
+
+### Mise en route rapide
+
+1. Dans le dictionnaire `options`, mettez `"events": lambda *a, **k: None`.
+2. Passez un callback `on_fetch_events` à `FullCalendar`.
+3. À l'intérieur du callback, construisez la liste des événements et appelez `info.response(events_list)`.
+
+```python
+from fullcalendar import FullCalendar as fullcalendar
+
+options = {
+    "initialView": "dayGridMonth",
+    "events": lambda *a, **k: None,  # active le mode fetch
+}
+
+def on_fetch(info):
+    # info.start / info.end       -> chaines ISO des bornes visibles
+    # info.start_value / info.end_value -> epoch ms (pratique pour les requêtes DB)
+    events = load_events_from_database(info.start, info.end)
+    info.response(events)   # renvoie la liste au calendrier
+
+fullcalendar(options, on_fetch_events=on_fetch)
+```
+
+### Ce que reçoit le callback
+
+`FetchInfoArguments` expose :
+
+| attribut         | type | description                                         |
+|------------------|------|-----------------------------------------------------|
+| `start`          | `str` | chaine ISO de la borne de début (incluse).          |
+| `end`            | `str` | chaine ISO de la borne de fin (exclue).             |
+| `start_value`    | `int` | borne de début en epoch millisecondes (requêtes DB).|
+| `end_value`      | `int` | borne de fin en epoch millisecondes.                |
+| `time_zone`      | `str` | le paramètre timeZone du calendrier.                |
+| `request_id`     | `int` | id interne servant à corréler la réponse.           |
+
+> FullCalendar appelle `on_fetch_events` automatiquement à chaque navigation dans le calendrier. Seuls les événements intersectant la plage demandée sont renvoyés.
+
+### Gestion des erreurs
+
+Appelez `info.failure("message")` au lieu de `info.response(...)` pour signaler une erreur à FullCalendar (ex: timeout de base de données).
 
 ## Captures d'Écran
 

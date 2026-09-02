@@ -52,26 +52,38 @@ export default {
       color: e.backgroundColor,
     } : null;
     let selectedDate = null;
+    let selectedDateEl = null;
     this.options.eventClick = (info) => this.$emit("click", safeClone({
       info: { event: serializeEvent(info.event), date: info.dateStr },
     }));
+    this.options.select = (info) => {
+      selectedDate = info.start;
+      this.calendar.gotoDate(info.start);
+    };
     this.options.dateClick = (info) => {
-      selectedDate = info.date;
+      if (selectedDateEl) {
+        selectedDateEl.classList.remove('selected-day');
+      }
+      info.dayEl.classList.add('selected-day');
+      selectedDateEl = info.dayEl;
       this.$emit("click", safeClone({ info: { date: info.dateStr } }));
     };
-    // Custom "jour" button: shows the day that was last clicked, not today.
-    this.options.customButtons = {
-      daySelected: {
-        text: 'jour',
-        click: () => this.calendar.changeView('timeGridDay', selectedDate || new Date()),
-      },
+    this.options.datesSet = () => {
+      if (selectedDate) {
+        const el = this.calendar.el.querySelector(`[data-date="${selectedDate.toISOString().slice(0, 10)}"]`);
+        if (el) {
+          if (selectedDateEl) selectedDateEl.classList.remove('selected-day');
+          el.classList.add('selected-day');
+          selectedDateEl = el;
+        }
+      }
     };
 
     // --- events as function (JS -> Python -> JS) ---
     // FullCalendar calls this function when it needs data.
     // We build a fully serializable payload (FullCalendar's `info` may contain
     // circular references, which would break NiceGUI's JSON.stringify).
-    this.options.events = (info, successCallback, failureCallback) => {
+    const dynamicSource = (info, successCallback, failureCallback) => {
       pendingInfo = { info, successCallback, failureCallback };
       const payload = {
         startStr: info.start instanceof Date ? info.start.toISOString() : String(info.startStr ?? ''),
@@ -81,13 +93,18 @@ export default {
       this.$emit("fetch_events", safeClone(payload));
     };
 
+    if (this.options.eventSources && this.options.eventSources.length) {
+      this.options.eventSources.push(dynamicSource);
+    } else {
+      this.options.events = dynamicSource;
+    }
+
     this.calendar = new FullCalendar.Calendar(this.$el, this.options);
     this.calendar.render();
   },
   methods: {
     update_calendar() {
       if (this.calendar) {
-        this.calendar.setOption("events", this.options.events);
         this.calendar.refetchEvents();
         this.calendar.render();
       }

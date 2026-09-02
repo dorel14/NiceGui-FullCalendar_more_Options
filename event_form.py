@@ -1,3 +1,33 @@
+"""
+Reusable "Add Event" dialog for NiceGUI + FullCalendar.
+
+This module provides a single public function, ``create_add_event_dialog``,
+that builds a modal form allowing users to create one-time or recurring events.
+The form is completely independent: you only need to pass it a callback that
+receives the collected data as a dictionary.
+
+Files
+-----
+event_form.py
+    The reusable dialog component (this file).
+main.py
+    Example app that uses the dialog and persists events to JSON.
+generate_events.py
+    Standalone script to generate ``events_full.json`` with 1 year of sample data.
+
+Usage
+-----
+    from event_form import create_add_event_dialog
+
+    def my_callback(data: dict) -> None:
+        # ``data`` contains keys like:
+        #   event_title, event_start_date, event_start_time,
+        #   all_day, rrule (for recurring events), etc.
+        print("New event:", data)
+
+    dialog = create_add_event_dialog(submit_callback=my_callback)
+    ui.button("Add Event", on_click=dialog.open)
+"""
 from collections.abc import Callable
 from datetime import date, datetime
 from typing import Any, Optional
@@ -10,16 +40,28 @@ def create_add_event_dialog(
     today: Optional[str] = None,
     nowhour: Optional[str] = None,
 ):
-    """
-    Creates a reusable Add Event dialog with optional recurrence (rrule) settings.
+    """Create a reusable "Add Event" dialog.
+
+    The dialog contains:
+    - Event title input
+    - All-day checkbox
+    - Start / end date and time pickers
+    - Recurrence settings (frequency, interval, weekdays, end date)
+    - Event description textarea
 
     Args:
-        submit_callback: Called with the collected event ``data`` dict on submit.
-        today: Default date string (YYYY-MM-DD). Defaults to today.
-        nowhour: Default time string (HH:mm). Defaults to current time.
+        submit_callback (Callable[[dict], None]): A function called when the user
+            clicks "Add Event". It receives the ``data`` dictionary with all form
+            values so you can save the event however you like (database, JSON file,
+            API call, etc.).
+        today (str, optional): Default date shown in the date pickers, formatted
+            as ``YYYY-MM-DD``. Defaults to today's date if omitted.
+        nowhour (str, optional): Default time shown in the time pickers, formatted
+            as ``HH:mm``. Defaults to the current time if omitted.
 
     Returns:
-        The :class:`ui.dialog` object (call ``.open()`` / ``.close()`` on it).
+        ui.dialog: The dialog element. Call ``.open()`` to show it and ``.close()``
+        to hide it.
     """
     if today is None:
         today = date.today().strftime("%Y-%m-%d")
@@ -28,6 +70,8 @@ def create_add_event_dialog(
 
     with ui.dialog() as add_event:
         with ui.card():
+            # ``data`` collects every field value so we can pass it to the
+            # ``submit_callback`` on submit.
             data: dict[str, Any] = {"rrule": {}}
 
             def update_rrule(key: str, value: Any):
@@ -104,11 +148,8 @@ def create_add_event_dialog(
                                 for day in ["mo", "tu", "we", "th", "fr", "sa", "su"]:
                                     ui.checkbox(day.capitalize()).on_value_change(
                                         lambda e, d=day: (
-                                            weekdays.append(d)
-                                            if e.value and d not in weekdays
-                                            else weekdays.remove(d)
-                                            if d in weekdays
-                                            else None,
+                                            weekdays.append(d) if e.value and d not in weekdays
+                                            else weekdays.remove(d) if d in weekdays else None,
                                             update_rrule("byweekday", weekdays),
                                         )[1]
                                     )
@@ -122,6 +163,8 @@ def create_add_event_dialog(
             ).classes("w-full")
 
             def on_submit():
+                # If the event is recurring, assemble the dtstart/until fields
+                # expected by FullCalendar.
                 if recurring.value:
                     data["rrule"]["dtstart"] = f"{data['event_start_date']}T{data['event_start_time']}"
                     data["rrule"]["until"] = data.get("until")
